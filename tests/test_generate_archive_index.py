@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from argparse import Namespace
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts.generate_archive_index import build_index
 
@@ -13,11 +14,6 @@ class GenerateArchiveIndexTest(unittest.TestCase):
         (root / "content/events/yamanashi-web").mkdir(parents=True)
         (root / "archive.yaml").write_text(
             """schema_version: "1.0"
-source:
-  type: archive_index
-  name: yamanashi-event-archive
-  url: https://github.com/yuukis/yamanashi-event-archive
-  ref: main
 """,
             encoding="utf-8",
         )
@@ -44,19 +40,30 @@ open_status: close
             encoding="utf-8",
         )
 
-        index = build_index(
-            Namespace(
-                config=root / "archive.yaml",
-                communities=root / "content/communities",
-                events=root / "content/events",
-                output=root / "public/index.json",
-                generated_at="2026-06-30T00:00:00+09:00",
+        with patch.dict(
+            "os.environ",
+            {
+                "GITHUB_REPOSITORY": "yuukis/yamanashi-event-archive",
+                "GITHUB_SERVER_URL": "https://github.com",
+                "GITHUB_REF_NAME": "main",
+            },
+            clear=True,
+        ):
+            index = build_index(
+                Namespace(
+                    config=root / "archive.yaml",
+                    communities=root / "content/communities",
+                    events=root / "content/events",
+                    output=root / "public/index.json",
+                    generated_at="2026-06-30T00:00:00+09:00",
+                )
             )
-        )
 
         self.assertEqual(index["schema_version"], "1.0")
+        self.assertEqual(index["source"]["type"], "archive_index")
         self.assertEqual(index["source"]["name"], "yamanashi-event-archive")
         self.assertEqual(index["source"]["url"], "https://github.com/yuukis/yamanashi-event-archive")
+        self.assertEqual(index["source"]["ref"], "main")
         self.assertEqual(index["communities"][0]["key"], "yamanashi-web")
         self.assertEqual(index["communities"][0]["description"], "山梨県内のWeb制作・Web開発勉強会です。")
         self.assertEqual(

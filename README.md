@@ -5,9 +5,8 @@ Markdown + YAML front matter のイベント原本から、`yamanashi-event-api`
 
 ## ディレクトリ
 
-- `archive.yaml`: archive index のメタデータです。`source.name` は API の
-  `/groups` で `archive_source` として使われます。`source.url` は
-  `archive_url` として使われます。
+- `archive.yaml`: archive index のスキーマバージョンです。`source` は生成時に
+  GitHub Actions の環境変数、またはローカルの Git 情報から補完されます。
 - `content/communities/*.md`: `/groups` に出すコミュニティ原本です。
 - `content/events/{group_key}/{YYYY-MM-DD}-{serial}.md`: イベント原本です。
 - `public/index.json`: 生成された archive index です。GitHub Pages ではこの
@@ -25,8 +24,11 @@ python3 scripts/generate_archive_index.py
 {group_key}-{YYYY-MM-DD}-{serial}@{archive_source_key}
 ```
 
-`archive_source_key` は `archive.yaml` の `source.key` があればそれを使い、
-なければ `source.name` を使います。
+`archive_source_key` は生成時に取得したリポジトリ名を使います。
+
+生成される `source` は、GitHub Actions では `GITHUB_REPOSITORY`、
+`GITHUB_SERVER_URL`、`GITHUB_REF_NAME` から作られます。ローカル実行時は
+`git remote get-url origin` と現在の Git ブランチから補完されます。
 
 ## イベント原本
 

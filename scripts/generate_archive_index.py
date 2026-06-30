@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -152,16 +154,66 @@ def event_identity(path: Path, front_matter: dict[str, Any]) -> tuple[str, str, 
 
 
 def load_config(path: Path) -> dict[str, Any]:
-    config = parse_simple_yaml(path.read_text(encoding="utf-8"), path)
-    source = config.get("source")
-    if not isinstance(source, dict):
-        raise ArchiveError(f"{path}: source is required")
-    if not source.get("name"):
-        raise ArchiveError(f"{path}: source.name is required")
-    if not source.get("url"):
-        raise ArchiveError(f"{path}: source.url is required")
-    source.setdefault("type", "archive_index")
-    return config
+    return parse_simple_yaml(path.read_text(encoding="utf-8"), path)
+
+
+def git_output(args: list[str], cwd: Path) -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    value = result.stdout.strip()
+    return value or None
+
+
+def normalize_git_url(url: str | None) -> str | None:
+    if not url:
+        return None
+    if url.startswith("git@github.com:"):
+        url = "https://github.com/" + url.removeprefix("git@github.com:")
+    if url.startswith("https://github.com/") and url.endswith(".git"):
+        url = url[:-4]
+    return url
+
+
+def build_source(repo_root: Path) -> dict[str, str]:
+    repository = os.environ.get("GITHUB_REPOSITORY")
+    server_url = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
+    remote_url = None if repository else normalize_git_url(
+        git_output(["remote", "get-url", "origin"], repo_root)
+    )
+
+    name = repository.split("/", 1)[1] if repository and "/" in repository else None
+    if name is None and remote_url:
+        name = remote_url.rstrip("/").removesuffix(".git").rsplit("/", 1)[-1]
+    if name is None:
+        raise ArchiveError("source.name could not be detected from GitHub Actions or git")
+
+    url = f"{server_url}/{repository}" if repository else remote_url
+    if url is None:
+        raise ArchiveError("source.url could not be detected from GitHub Actions or git")
+
+    ref = (
+        os.environ.get("GITHUB_REF_NAME")
+        or os.environ.get("GITHUB_HEAD_REF")
+        or git_output(["branch", "--show-current"], repo_root)
+        or git_output(["rev-parse", "--short", "HEAD"], repo_root)
+    )
+    if ref is None:
+        raise ArchiveError("source.ref could not be detected from GitHub Actions or git")
+
+    return {
+        "type": "archive_index",
+        "name": name,
+        "url": normalize_git_url(url) or url,
+        "ref": ref,
+    }
 
 
 def load_communities(directory: Path) -> list[dict[str, Any]]:
@@ -215,8 +267,8 @@ def load_events(
 def build_index(args: argparse.Namespace) -> dict[str, Any]:
     config = load_config(args.config)
     generated_at = args.generated_at or iso_now()
-    source = config["source"]
-    source_key = str(source.get("key") or source["name"])
+    source = build_source(args.config.parent)
+    source_key = source["name"]
     communities = load_communities(args.communities)
     communities_by_key = {item["key"]: item for item in communities}
     events = load_events(args.events, communities_by_key, source_key, generated_at)
