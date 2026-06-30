@@ -7,7 +7,7 @@ website_url: https://cssnite.jp/kofu/archives.html
 owner_text: null
 image_url: null
 x_username: null
-facebook_url: null
+facebook_url: https://www.facebook.com/cssnite.kofu
 member_users_count: null
 ical_url: null
 ---
