@@ -1,6 +1,6 @@
-# Yamanashi Event Archive
+# Yamanashi Tech Events Archive
 
-Markdown + YAML front matter のイベント原本から、`yamanashi-event-api`
+Markdown + YAML front matter のイベント原本から、[Yamanashi Tech Events API](https://github.com/yuukis/yamanashi-event-api)
 が読み込める archive index JSON を生成するリポジトリです。
 
 ## ディレクトリ
