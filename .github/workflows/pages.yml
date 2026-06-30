@@ -1,6 +1,9 @@
 name: Deploy archive index to GitHub Pages
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -8,11 +11,9 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: archive-index-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -25,11 +26,37 @@ jobs:
           python-version: "3.x"
       - run: python -m unittest discover -s tests
       - run: python scripts/generate_archive_index.py
+      - name: Summarize generated archive index
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+
+          with open("public/index.json", encoding="utf-8") as f:
+              index = json.load(f)
+
+          print("## Generated archive index")
+          print()
+          print(f"- Communities: {len(index['communities'])}")
+          print(f"- Events: {len(index['events'])}")
+          print(f"- Source: {index['source']['name']}")
+          print()
+          print("Download `archive-index-json` from this workflow run to inspect `index.json`.")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: archive-index-json
+          path: public/index.json
+          if-no-files-found: error
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: public
 
   deploy:
+    if: github.event_name != 'pull_request'
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
