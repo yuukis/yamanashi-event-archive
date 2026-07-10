@@ -5,7 +5,7 @@ sub_title: null
 url: https://scratch.itolab.com/
 website_url: https://scratch.itolab.com/
 owner_text: Scratch Day in Yamanashi 実行委員会
-image_url: null
+image_url: https://yuukis.github.io/yamanashi-event-archive/assets/8833337564.png
 x_username: null
 facebook_url: null
 member_users_count: null
