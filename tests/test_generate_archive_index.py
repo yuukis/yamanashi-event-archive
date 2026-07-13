@@ -4,7 +4,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.generate_archive_index import build_index
+from scripts.generate_archive_index import ArchiveError, build_index, load_events
 
 
 class GenerateArchiveIndexTest(unittest.TestCase):
@@ -33,6 +33,7 @@ title: 山梨Web勉強会 第1回
 event_url: https://example.com/archive/yamanashi-web/2012-05-19-001
 started_at: 2012-05-19T14:00:00+09:00
 ended_at: 2012-05-19T17:00:00+09:00
+updated_at: 2012-05-18T20:00:00+09:00
 open_status: close
 ---
 山梨Web勉強会の初回イベント。
@@ -72,8 +73,27 @@ open_status: close
         )
         self.assertEqual(index["events"][0]["group_key"], "yamanashi-web")
         self.assertEqual(index["events"][0]["group_name"], "山梨Web勉強会")
-        self.assertEqual(index["events"][0]["updated_at"], "2026-06-30T00:00:00+09:00")
+        self.assertEqual(index["events"][0]["updated_at"], "2012-05-18T20:00:00+09:00")
         self.assertEqual(index["events"][0]["description"], "山梨Web勉強会の初回イベント。")
+
+    def test_rejects_event_without_updated_at(self):
+        root = Path(tempfile.mkdtemp())
+        events = root / "content/events/yamanashi-web"
+        events.mkdir(parents=True)
+        (events / "2012-05-19-001.md").write_text(
+            """---
+title: 山梨Web勉強会 第1回
+event_url: https://example.com/archive/yamanashi-web/2012-05-19-001
+started_at: 2012-05-19T14:00:00+09:00
+ended_at: 2012-05-19T17:00:00+09:00
+open_status: close
+---
+""",
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(ArchiveError, "missing required fields: updated_at"):
+            load_events(root / "content/events", {}, "yamanashi-event-archive")
 
 
 if __name__ == "__main__":

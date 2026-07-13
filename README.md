@@ -38,6 +38,7 @@ title: 山梨Web勉強会 第1回
 event_url: https://example.com/archive/yamanashi-web/2012-05-19-001
 started_at: 2012-05-19T14:00:00+09:00
 ended_at: 2012-05-19T17:00:00+09:00
+updated_at: 2012-05-18T20:00:00+09:00
 open_status: close
 place: 山梨県立図書館
 address: 山梨県甲府市北口2-8-1
@@ -48,6 +49,8 @@ address: 山梨県甲府市北口2-8-1
 `group_key`、日付、serial はファイルパス
 `content/events/{group_key}/{YYYY-MM-DD}-{serial}.md` から補完されます。
 本文は `description` が未指定の場合に使われます。
+`updated_at` はビルド時刻から補完されないため、原本サイトの更新日時、
+公開日時、または取得できない場合は `started_at` を明示してください。
 
 ## 検証
 

@@ -236,7 +236,6 @@ def load_events(
     directory: Path,
     communities_by_key: dict[str, dict[str, Any]],
     source_key: str,
-    generated_at: str,
 ) -> list[dict[str, Any]]:
     events = []
     for path in sorted(directory.rglob("*.md")):
@@ -247,8 +246,6 @@ def load_events(
         item = {**EVENT_DEFAULTS, **front_matter}
         item["group_key"] = group_key
         item["uid"] = f"{group_key}-{event_date}-{serial}@{source_key}"
-        item.setdefault("updated_at", generated_at)
-        item["updated_at"] = item.get("updated_at") or generated_at
         if not item.get("description") and body:
             item["description"] = body
         if not item.get("group_name") and community:
@@ -271,7 +268,7 @@ def build_index(args: argparse.Namespace) -> dict[str, Any]:
     source_key = source["name"]
     communities = load_communities(args.communities)
     communities_by_key = {item["key"]: item for item in communities}
-    events = load_events(args.events, communities_by_key, source_key, generated_at)
+    events = load_events(args.events, communities_by_key, source_key)
     return {
         "schema_version": str(config.get("schema_version", "1.0")),
         "generated_at": generated_at,
