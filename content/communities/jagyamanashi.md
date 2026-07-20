@@ -1,5 +1,5 @@
 ---
-key: jagyamanashi-old
+key: jagyamanashi
 title: 日本Androidの会 山梨支部
 sub_title: 山梨県を中心に、Androidに関連する勉強会や懇親会などを実施しているコミュニティ
 url: https://jag.yamanashi.dev
